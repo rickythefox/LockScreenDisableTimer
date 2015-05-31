@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="timeintervals">
+        <item>5m</item>
+        <item>10m</item>
+        <item>30s</item>
+        <item>1h</item>
+        <item>2h</item>
+        <item>4h</item>
+        <item>8h</item>
+        <item>24h</item>
+    </string-array>
+</resources>
