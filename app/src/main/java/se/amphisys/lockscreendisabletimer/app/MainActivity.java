@@ -1,6 +1,7 @@
 package se.amphisys.lockscreendisabletimer.app;
 
 import android.app.*;
+import android.app.admin.DevicePolicyManager;
 import android.content.*;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
@@ -9,6 +10,7 @@ import android.os.Handler;
 import android.os.SystemClock;
 import android.support.annotation.Nullable;
 import android.support.v4.app.NotificationCompat;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -23,6 +25,7 @@ import roboguice.inject.InjectView;
 import roboguice.receiver.RoboBroadcastReceiver;
 import roboguice.util.Ln;
 
+import java.lang.reflect.Method;
 import java.util.concurrent.TimeUnit;
 
 @ContentView(R.layout.activity_main)
@@ -36,6 +39,8 @@ public class MainActivity extends RoboActionBarActivity {
     private TextView statusText;
     @InjectView(R.id.timerText)
     private TextView timerText;
+    @InjectView(R.id.errorText)
+    private TextView errorText;
     @Inject
     private AlarmManager alarmManager;
     @Inject
@@ -66,6 +71,18 @@ public class MainActivity extends RoboActionBarActivity {
         numberPicker.setDescendantFocusability(NumberPicker.FOCUS_BLOCK_DESCENDANTS);
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (isDeviceSecured()) {
+            errorText.setText("This app only works when screen lock is set to Swipe or Pattern. Change it and restart the app.");
+            disableButton.setEnabled(false);
+        } else {
+            errorText.setText("");
+            disableButton.setEnabled(true);
+        }
+    }
+
     public void clickDisable(View v) {
         if(!lockscreenDisabled) {
             setLockscreenDisabled(true);
@@ -77,6 +94,7 @@ public class MainActivity extends RoboActionBarActivity {
     private void setLockscreenDisabled(boolean disabled) {
         lockscreenDisabled = disabled;
         setupGui();
+        keyguardHandler.setEnablednessOfKeyguard(!disabled);
 
         if(lockscreenDisabled) {
             registerReceiver(alarmReceiver, new IntentFilter(getString(R.string.REENABLE_KEYGUARD_ACTION)));
@@ -89,7 +107,6 @@ public class MainActivity extends RoboActionBarActivity {
             unregisterReceiver(alarmReceiver);
             alarmManager.cancel(getEnableLockscreenPendingIntent());
 
-            keyguardHandler.setEnablednessOfKeyguard(true);
             cancelCountdownTimer();
             hideNotification();
         }
@@ -97,12 +114,12 @@ public class MainActivity extends RoboActionBarActivity {
 
     private void setupGui() {
         if(lockscreenDisabled) {
-            disableButton.setText("Reenable lockscreen");
-            statusText.setText("Lockscreen disabled");
+            disableButton.setText("Reenable screen lock");
+            statusText.setText("Screen lock disabled");
             numberPicker.setEnabled(false);
         } else {
-            disableButton.setText("Disable lockscreen");
-            statusText.setText("Lockscreen enabled");
+            disableButton.setText("Disable screen lock");
+            statusText.setText("Screen lock enabled");
             numberPicker.setEnabled(true);
         }
     }
@@ -116,10 +133,10 @@ public class MainActivity extends RoboActionBarActivity {
                     TimeUnit.MILLISECONDS.toSeconds(millisUntilFinished) -
                     TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(millisUntilFinished))
                 );
-                timerText.setText(String.format("%s until reenabling", timeLeft));
+                timerText.setText(String.format("%s until reenabled", timeLeft));
             }
             public void onFinish() {
-                timerText.setText("Lockscreen enabled");
+                timerText.setText("");
             }
          }.start();
     }
@@ -137,7 +154,7 @@ public class MainActivity extends RoboActionBarActivity {
 		NotificationCompat.Builder builder = new NotificationCompat.Builder(this)
                 .setSmallIcon(R.drawable.lock_timer)
                 .setContentTitle(getTitle())
-                .setContentText("Lockscreen disabled")
+                .setContentText("Screen lock disabled")
                 .setContentIntent(PendingIntent.getActivity(this, 0, intent, 0))
                 .addAction(R.drawable.ic_lock_lock_alpha, "Reenable!", getEnableLockscreenPendingIntent())
                 .setOngoing(true)
@@ -185,6 +202,25 @@ public class MainActivity extends RoboActionBarActivity {
                 break;
         }
         return ms;
+    }
+
+    private boolean isDeviceSecured()
+    {
+        String LOCKSCREEN_UTILS = "com.android.internal.widget.LockPatternUtils";
+        try {
+            Class<?> lockUtilsClass = Class.forName(LOCKSCREEN_UTILS);
+            Object lockUtils = lockUtilsClass.getConstructor(Context.class).newInstance(this);
+            Method method = lockUtilsClass.getMethod("getActivePasswordQuality");
+
+            int lockProtectionLevel = (Integer)method.invoke(lockUtils); // Thank you esme_louise for the cast hint
+            if(lockProtectionLevel >= DevicePolicyManager.PASSWORD_QUALITY_NUMERIC) {
+                return true;
+            }
+        }
+        catch (Exception e) {
+            Ln.e("reflectInternalUtils", "ex:" + e);
+        }
+        return false;
     }
 
     @Override

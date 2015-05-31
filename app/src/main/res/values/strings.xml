@@ -1,7 +1,7 @@
 <resources>
     <string name="REENABLE_KEYGUARD_ACTION">REENABLE_KEYGUARD_ACTION</string>
 
-    <string name="app_name">Lockscreen Disable Timer</string>
+    <string name="app_name">Screen Lock Disable Timer</string>
 
     <string name="action_settings">Settings</string>
     <string name="action_about">About</string>
