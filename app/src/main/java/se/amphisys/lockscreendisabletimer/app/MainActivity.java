@@ -42,23 +42,10 @@ public class MainActivity extends RoboActionBarActivity {
     @InjectView(R.id.errorText)
     private TextView errorText;
     @Inject
-    private AlarmManager alarmManager;
-    @Inject
-    private NotificationManager notificationManager;
-    @Inject
-    private KeyguardHandler keyguardHandler;
+    private SharedPreferences sharedPreferences;
+
     private CountDownTimer countDownTimer;
     private boolean lockscreenDisabled = false;
-
-    private final RoboBroadcastReceiver alarmReceiver = new RoboBroadcastReceiver() {
-        @Override
-        protected void handleReceive(Context context, Intent intent) {
-            super.handleReceive(context, intent);
-            if(intent.getAction().equals(context.getString(R.string.REENABLE_KEYGUARD_ACTION))) {
-                setLockscreenDisabled(false);
-            }
-        }
-    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -84,33 +71,14 @@ public class MainActivity extends RoboActionBarActivity {
     }
 
     public void clickDisable(View v) {
-        if(!lockscreenDisabled) {
-            setLockscreenDisabled(true);
-        } else {
-            setLockscreenDisabled(false);
-        }
-    }
-
-    private void setLockscreenDisabled(boolean disabled) {
-        lockscreenDisabled = disabled;
         setupGui();
-        keyguardHandler.setEnablednessOfKeyguard(!disabled);
-
-        if(lockscreenDisabled) {
-            registerReceiver(alarmReceiver, new IntentFilter(getString(R.string.REENABLE_KEYGUARD_ACTION)));
-            long ms = getSelectedTimeMillis();
-            alarmManager.set(AlarmManager.ELAPSED_REALTIME_WAKEUP, SystemClock.elapsedRealtime() + ms, getEnableLockscreenPendingIntent());
-
-            displayNotification();
-            startCountdownTimer(ms);
+        if(!lockscreenDisabled) {
+            // TODO
         } else {
-            unregisterReceiver(alarmReceiver);
-            alarmManager.cancel(getEnableLockscreenPendingIntent());
-
-            cancelCountdownTimer();
-            hideNotification();
+            // TODO
         }
     }
+
 
     private void setupGui() {
         if(lockscreenDisabled) {
@@ -148,28 +116,8 @@ public class MainActivity extends RoboActionBarActivity {
         }
     }
 
-    private void displayNotification() {
-        Intent intent = new Intent(this, MainActivity.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_SINGLE_TOP);
-		NotificationCompat.Builder builder = new NotificationCompat.Builder(this)
-                .setSmallIcon(R.drawable.lock_timer)
-                .setContentTitle(getTitle())
-                .setContentText("Screen lock disabled")
-                .setContentIntent(PendingIntent.getActivity(this, 0, intent, 0))
-                .addAction(R.drawable.ic_lock_lock_alpha, "Reenable!", getEnableLockscreenPendingIntent())
-                .setOngoing(true)
-                .setWhen(0)
-                .setAutoCancel(false);
-        notificationManager.notify(0, builder.build());
-    }
-
     private void hideNotification() {
-        notificationManager.cancel(0);
-    }
-
-    private PendingIntent getEnableLockscreenPendingIntent() {
-        Intent intent = new Intent(getString(R.string.REENABLE_KEYGUARD_ACTION));
-        return PendingIntent.getBroadcast(this, 1, intent, 0);
+        notificationManager.cancel(0); // TODO
     }
 
     private long getSelectedTimeMillis() {
