@@ -22,8 +22,8 @@ android {
         applicationId "se.amphisys.lockscreendisabletimer.app"
         minSdkVersion 11
         targetSdkVersion 22
-        versionCode 1000
-        versionName "1.0"
+        versionCode 1010
+        versionName "1.01"
     }
     buildTypes {
         release {

@@ -28,34 +28,44 @@ import roboguice.util.Ln;
 import java.lang.reflect.Method;
 import java.util.concurrent.TimeUnit;
 
+@SuppressWarnings("BindingAnnotationWithoutInject")
 @ContentView(R.layout.activity_main)
 public class MainActivity extends RoboActionBarActivity {
 
-    @InjectView(R.id.numberPicker)
-    private NumberPicker numberPicker;
-    @InjectView(R.id.disableButton)
-    private Button disableButton;
-    @InjectView(R.id.statusText)
-    private TextView statusText;
-    @InjectView(R.id.timerText)
-    private TextView timerText;
-    @InjectView(R.id.errorText)
-    private TextView errorText;
-    @Inject
-    private SharedPreferences sharedPreferences;
+    @InjectView(R.id.numberPicker) private NumberPicker numberPicker;
+    @InjectView(R.id.disableButton) private Button disableButton;
+    @InjectView(R.id.statusText) private TextView statusText;
+    @InjectView(R.id.timerText) private TextView timerText;
+    @InjectView(R.id.errorText) private TextView errorText;
+    @Inject private SharedPreferences sharedPreferences;
+    @Inject private IntentHelper intentHelper;
 
     private CountDownTimer countDownTimer;
-    private boolean lockscreenDisabled = false;
+
+    private final RoboBroadcastReceiver notificationButtonReceiver = new RoboBroadcastReceiver() {
+        @Override
+        protected void handleReceive(Context context, Intent intent) {
+            super.handleReceive(context, intent);
+            if(intent.getAction().equals(context.getString(R.string.REENABLE_KEYGUARD_ACTION))) {
+                cancelCountdownTimer();
+                setupGui(false);
+            }
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        registerReceiver(notificationButtonReceiver, new IntentFilter(getString(R.string.REENABLE_KEYGUARD_ACTION)));
 
         String[] items = getResources().getStringArray(R.array.timeintervals);
         numberPicker.setMinValue(0);
         numberPicker.setMaxValue(items.length-1);
         numberPicker.setDisplayedValues(items);
         numberPicker.setDescendantFocusability(NumberPicker.FOCUS_BLOCK_DESCENDANTS);
+        numberPicker.setValue(sharedPreferences.getInt("numberPicker", 0));
+
+        setupGui(KeyguardService.getInstance() != null);
     }
 
     @Override
@@ -70,18 +80,28 @@ public class MainActivity extends RoboActionBarActivity {
         }
     }
 
-    public void clickDisable(View v) {
-        setupGui();
-        if(!lockscreenDisabled) {
-            // TODO
+    @Override
+    protected void onDestroy() {
+        unregisterReceiver(notificationButtonReceiver);
+    }
+
+    public void clickDisable(View v)  {
+        boolean disabled = KeyguardService.getInstance() != null;
+        Intent i = new Intent(this, KeyguardService.class);
+        i.putExtra("ms", getSelectedTimeMillis());
+        if(!disabled) {
+            startService(i);
+            startCountdownTimer(getSelectedTimeMillis());
+            setupGui(true);
         } else {
-            // TODO
+            stopService(i);
+            cancelCountdownTimer();
+            setupGui(false);
         }
     }
 
-
-    private void setupGui() {
-        if(lockscreenDisabled) {
+    private void setupGui(boolean disabled) {
+        if(disabled) {
             disableButton.setText("Reenable screen lock");
             statusText.setText("Screen lock disabled");
             numberPicker.setEnabled(false);
@@ -116,11 +136,8 @@ public class MainActivity extends RoboActionBarActivity {
         }
     }
 
-    private void hideNotification() {
-        notificationManager.cancel(0); // TODO
-    }
-
     private long getSelectedTimeMillis() {
+        sharedPreferences.edit().putInt("numberPicker", numberPicker.getValue()).apply();
         long ms = 0;
         switch (numberPicker.getValue()) {
             case 0: // 5m
