@@ -83,6 +83,7 @@ public class MainActivity extends RoboActionBarActivity {
     @Override
     protected void onDestroy() {
         unregisterReceiver(notificationButtonReceiver);
+        super.onDestroy();
     }
 
     public void clickDisable(View v)  {
