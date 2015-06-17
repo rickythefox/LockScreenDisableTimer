@@ -163,7 +163,10 @@ public class MainActivity extends RoboActionBarActivity {
             case 6: // 8h
                 ms = 8*60*60*1000;
                 break;
-            case 7: // 24h
+            case 7: // 12h
+                ms = 12*60*60*1000;
+                break;
+            case 8: // 24h
                 ms = 24*60*60*1000;
                 break;
         }

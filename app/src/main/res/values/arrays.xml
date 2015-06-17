@@ -8,6 +8,7 @@
         <item>2h</item>
         <item>4h</item>
         <item>8h</item>
+        <item>12h</item>
         <item>24h</item>
     </string-array>
 </resources>
