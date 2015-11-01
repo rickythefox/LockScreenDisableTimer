@@ -114,6 +114,9 @@ public class MainActivity extends RoboActionBarActivity {
     }
 
     private void startCountdownTimer(final long ms) {
+        if(ms == -1) {
+            timerText.setText("Click Relock to enable");
+        }
         countDownTimer = new CountDownTimer(ms, 1000) {
             public void onTick(long millisUntilFinished) {
                 String timeLeft = String.format("%dh %dm %ds",
@@ -168,6 +171,9 @@ public class MainActivity extends RoboActionBarActivity {
                 break;
             case 8: // 24h
                 ms = 24*60*60*1000;
+                break;
+            case 9: // Inf
+                ms = -1;
                 break;
         }
         return ms;

@@ -10,5 +10,6 @@
         <item>8h</item>
         <item>12h</item>
         <item>24h</item>
+        <item>Until canceled</item>
     </string-array>
 </resources>

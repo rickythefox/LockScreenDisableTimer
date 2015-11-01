@@ -69,7 +69,9 @@ public class KeyguardService extends RoboService {
         startForeground(1337, createNotification());
         registerReceiver(alarmReceiver, new IntentFilter(getString(R.string.REENABLE_KEYGUARD_ACTION)));
         keyguardHandler.setEnablednessOfKeyguard(false);
-        alarmManager.set(AlarmManager.ELAPSED_REALTIME_WAKEUP, SystemClock.elapsedRealtime() + ms, intentHelper.getEnableLockscreenPendingIntent());
+        if(ms > -1) {
+            alarmManager.set(AlarmManager.ELAPSED_REALTIME_WAKEUP, SystemClock.elapsedRealtime() + ms, intentHelper.getEnableLockscreenPendingIntent());
+        }
     }
 
     private Notification createNotification() {
